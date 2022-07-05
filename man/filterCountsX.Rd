@@ -6,6 +6,7 @@
 \usage{
 filterCountsX(
   cnts,
+  cellsToUse = NULL,
   minObs = 2,
   dropBiallelic = TRUE,
   dropStrata = c("PAR1", "PAR2", "strata2", "strata3"),
@@ -16,6 +17,8 @@ filterCountsX(
 }
 \arguments{
 \item{cnts}{The counts to filter.  Should be the output of either \code{\link{getAllelicExpression}}, \code{\link{vartrixCnts}}, or \code{\link{hetSNPsFromRNA}}.}
+
+\item{cellsToUse}{Filter out any cells not in this list.  If NULL, no filtering on cell barcdodes.}
 
 \item{minObs}{Drop any SNP that is not observed in at least this many cells.}
 
