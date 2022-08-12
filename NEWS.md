@@ -10,3 +10,8 @@
  * Include strata definition in X1k in @metadata slot.
  * Class functions for fit object.
 
+# 0.3.0
+
+ * Added check to detect non-convergence in cases of extreme X-Inactivation.
+ * Bug fix to verbose flag.  
+

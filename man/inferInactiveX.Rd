@@ -16,6 +16,8 @@ inferInactiveX(
   nStarts = 1000,
   tol = 1e-06,
   maxIter = 1000,
+  tauDiffFrac = 0.1,
+  tauDiffThresh = 0.05,
   nParallel = 1,
   verbose = 1
 )
@@ -43,6 +45,10 @@ inferInactiveX(
 
 \item{maxIter}{Terminate EM if more than this many iterations.}
 
+\item{tauDiffFrac}{Sanity check performed using the top \code{tauDiffFrac} of fits.}
+
+\item{tauDiffThresh}{Sanity check failed when the fractional difference in tau exceeds this value.}
+
 \item{nParallel}{How many threads?}
 
 \item{verbose}{Be verbose?  Levels are 0 (off), 1 (outer loop), 2 (beta loop), 3 (EM loop)}
@@ -57,4 +63,8 @@ Given counts on the X chromosome, use EM to simultaneously estimate the genotype
 To ensure consistency of results, one cell (the \code{anchorCell}) is assumed to be in the maternally active state.  If not specified, this is picked to be the cell with the highest X chromosome coverage.
 
 The summary stats provided at the cell/SNP level essentially assume the other part of the data is correct and then measure how discrepent each cell or SNP is.  For example, the cell summary stats assumes all SNPs have been correctly phased and then measures how many reads are in conflict with this phasing across each cell.
+
+For samples with few cells and an extreme fraction of cells in one X-Inactivation state, it may not be possible to accurately estimate the genotype and X-Inactivation state of each cell.  However, in this situation the best fits across all random starts form show a trend where more extreme \code{tau} values (fraction of cells in one X-Inactivation state) always result in a better fit.  By contrast, where the best fit is well captured the top fits all cluster strongly around the same value.  
+
+This difference can be seen visually with \code{\link{plotSolutions}}, but the code will attempt to automatically detect when the fit should be more extreme.  This is done by calculating the difference between the best fit value of \code{tau} and the the top \code{tauDiffFrac*maxIter} best fits (divided by the best fit \code{tau}) and reporting when this difference exceeds \code{tauDiffThresh}.  The intuition here is that when the top fits all cluster around one value the average difference will be basically 0.
 }
