@@ -18,6 +18,7 @@ inferInactiveX(
   maxIter = 1000,
   tauDiffFrac = 0.1,
   tauDiffThresh = 0.05,
+  tauDiffWarnOnly = FALSE,
   nParallel = 1,
   verbose = 1
 )
@@ -48,6 +49,8 @@ inferInactiveX(
 \item{tauDiffFrac}{Sanity check performed using the top \code{tauDiffFrac} of fits.}
 
 \item{tauDiffThresh}{Sanity check failed when the fractional difference in tau exceeds this value.}
+
+\item{tauDiffWarnOnly}{If we fail the tauDiff check (see details), throw a warning instead of an error.}
 
 \item{nParallel}{How many threads?}
 

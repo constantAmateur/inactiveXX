@@ -23,6 +23,7 @@
 #' @param maxIter Terminate EM if more than this many iterations.
 #' @param tauDiffFrac Sanity check performed using the top \code{tauDiffFrac} of fits.
 #' @param tauDiffThresh Sanity check failed when the fractional difference in tau exceeds this value. 
+#' @param tauDiffWarnOnly If we fail the tauDiff check (see details), throw a warning instead of an error. 
 #' @param nParallel How many threads?
 #' @param verbose Be verbose?  Levels are 0 (off), 1 (outer loop), 2 (beta loop), 3 (EM loop)
 #' @return A list with \code{states}, indicating which allele is active, \code{genotype} indicating if the reference allele is maternal for each SNP, \code{tau} the fraction of cells with maternal active, \code{allFits} which contains results for each of the \code{nStarts} random initiations, \code{cellSummary} which contains summary stats for each cell, \code{snpSummary} which contains summary stats for each SNP, and \code{dd} which contains the raw data.
@@ -31,7 +32,7 @@
 #' @importFrom alleleIntegrator buildCountMatricies
 #' @importFrom bettermc mclapply
 #' @export
-inferInactiveX = function(cnts,errRate=0.10,logitCut=3,pCut=0.2,tauInit=0.5,betaStart=.01,betaFac=1.3,anchorCell=NULL,nStarts=1000,tol=1e-6,maxIter=1000,tauDiffFrac=0.1,tauDiffThresh=0.05,nParallel=1,verbose=1){
+inferInactiveX = function(cnts,errRate=0.10,logitCut=3,pCut=0.2,tauInit=0.5,betaStart=.01,betaFac=1.3,anchorCell=NULL,nStarts=1000,tol=1e-6,maxIter=1000,tauDiffFrac=0.1,tauDiffThresh=0.05,tauDiffWarnOnly=FALSE,nParallel=1,verbose=1){
   #Are the inputs phased?  If so, can just return the answer right now.
   if(!is.null(cnts$matCount) && !is.null(cnts$patCount)){
     #If they are, no need for EM.
@@ -120,12 +121,16 @@ inferInactiveX = function(cnts,errRate=0.10,logitCut=3,pCut=0.2,tauInit=0.5,beta
     tauDiff = (pmin(1-taus,taus)-tau)/tau
     #Get the top N and calculate the relative difference from the best value
     w = tail(seq_along(taus),n=ceiling(length(taus)*tauDiffFrac))
-    if(mean(tauDiff[w]) > tauDiffThresh)
-      warning(sprintf('Top %d fits highly discepent (%g).  It is likely that a more extreme X-Inactivation fraction is true, but there is insufficient data to estimate it.',length(w),mean(tauDiff[w])))
+    if(mean(tauDiff[w]) > tauDiffThresh){
+      errFun = ifelse(tauDiffWarnOnly,warning,error)
+      errFun(sprintf('Top %d fits highly discepent (%g).  It is likely that a more extreme X-Inactivation fraction is true, but there is insufficient data to estimate it.',length(w),mean(tauDiff[w])))
+    }
     #Pick solution with best likelihood
     best = out[[which.max(sapply(out,function(e) e$Q))]]
     fin = list(tau=best$tau,states=best$states,genotype=best$lambdas,dd=dd,allFits=out)
   }
+  if(verbose>0)
+    message(sprintf("Best fit found with X-Inactivation fraction (tau) of %g",fin$tau))
   #Add in some more details to dd
   #fin$dd$isMat = fin$states[fin$dd$cell]>0.5
   fin$dd$matCount = ifelse(fin$genotype[fin$dd$SNP],fin$dd$refCount,fin$dd$altCount)
