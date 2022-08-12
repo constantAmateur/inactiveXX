@@ -20,7 +20,7 @@ deterministicAnnealing = function(dd,betaStart,betaFac,tauInit,anchorCell,verbos
   i=0
   for(beta in betas){
     i=i+1
-    if(verbose>1)
+    if(verbose>2)
       message(sprintf('  [%d of %d] Running deterministic annealing with beta=%g.',i,length(betas),beta))
     tmp = inactiveXEM(dd,beta,tau,lambdas,states,...,verbose=verbose)
     lambdas = tmp$lambdas

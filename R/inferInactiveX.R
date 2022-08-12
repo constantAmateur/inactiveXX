@@ -92,7 +92,7 @@ inferInactiveX = function(cnts,errRate=0.10,logitCut=3,pCut=0.2,tauInit=0.5,beta
     dd = dd[dd$tot>0,]
     if(verbose)
       message(sprintf("Running EM fit with %d random starts using %d threads",nStarts,nParallel))
-    #Run model n times and pick best
+    #Run model n times and pick best.  The best combination of params for this is a bit of guesswork, but the values here should work well in most cases.
     out = mclapply(seq(nStarts),function(e) {
                      tmp = deterministicAnnealing(dd,betaStart,betaFac,tauInit,anchorCell,verbose,errRate=errRate,tol=tol,maxIter=maxIter)
                      if(verbose>1)
@@ -100,6 +100,12 @@ inferInactiveX = function(cnts,errRate=0.10,logitCut=3,pCut=0.2,tauInit=0.5,beta
                      return(tmp)},
                      mc.allow.fatal=TRUE,
                      mc.silent=verbose<1,
+                     mc.retry.silent = verbose<1,
+                     mc.dump.frames='no',
+                     mc.shm.ipc=FALSE,
+                     mc.share.copy=FALSE,
+                     mc.share.vectors=FALSE,
+                     #mc.conditions = ifelse(verbose<1,'ignore','signal'),
                      mc.progress= interactive() && verbose,
                      mc.retry=10,
                      mc.cores=nParallel)
@@ -110,17 +116,12 @@ inferInactiveX = function(cnts,errRate=0.10,logitCut=3,pCut=0.2,tauInit=0.5,beta
     taus = taus[o]
     Qs = Qs[o]
     tau = tail(taus,n=1)
-    tauDiff = pmin(1-taus,taus)-tau
+    tau = pmin(tau,1-tau)
+    tauDiff = (pmin(1-taus,taus)-tau)/tau
     #Get the top N and calculate the relative difference from the best value
     w = tail(seq_along(taus),n=ceiling(length(taus)*tauDiffFrac))
-    if((mean(tauDiff[w])/tau) > tauDiffThresh)
-      warning(sprintf('Top %d fits highly discepent.  It is likely that a more extreme X-Inactivation fraction is true, but there is insufficient data to estimate it.',length(w)))
-
-
-
-
-    maxIter*.1
-
+    if(mean(tauDiff[w]) > tauDiffThresh)
+      warning(sprintf('Top %d fits highly discepent (%g).  It is likely that a more extreme X-Inactivation fraction is true, but there is insufficient data to estimate it.',length(w),mean(tauDiff[w])))
     #Pick solution with best likelihood
     best = out[[which.max(sapply(out,function(e) e$Q))]]
     fin = list(tau=best$tau,states=best$states,genotype=best$lambdas,dd=dd,allFits=out)

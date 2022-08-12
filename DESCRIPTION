@@ -1,6 +1,6 @@
 Package: inactiveXX
 Title: Determine which copy of X is inactivate in single cell transcriptomic data
-Version: 0.3.0
+Version: 0.3.2
 Date: 2022-08-12
 Author: Matthew Daniel Young
 Maintainer: Matthew Daniel Young <my4@sanger.ac.uk>

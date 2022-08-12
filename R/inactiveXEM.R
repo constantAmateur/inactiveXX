@@ -55,7 +55,7 @@ inactiveXEM = function(dd,beta,tauInit,lambdas,states,errRate,tol,maxIter,verbos
     dQ = Qnew-Q
     Q=Qnew
     #Update us on the goings on
-    if(verbose>2)
+    if(verbose>3)
       message(sprintf("    [beta=%.02f i=%.03d] Q=%g, dQ = %g, %d SNPs were swapped, assignments moved by %g, and new tau is %g",beta,i,Q,dQ,sum(abs(oldLamb-lambdas)),sum(abs(oldStates-states)),tau))
     if(dQ< tol | i==maxIter)
       break
