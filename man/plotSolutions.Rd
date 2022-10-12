@@ -4,31 +4,21 @@
 \alias{plotSolutions}
 \title{Plot summary of solutions}
 \usage{
-plotSolutions(
-  fit,
-  pointColour = "darkgrey",
-  pointSize = 1,
-  pointAlpha = 1,
-  ...
-)
+plotSolutions(fit, jitter = c(0.01, 0.01))
 }
 \arguments{
 \item{fit}{The output of \code{\link{inferInactiveX}}.}
 
-\item{pointColour}{Colour of points.}
-
-\item{pointSize}{Size of points.}
-
-\item{pointAlpha}{Transparency of points.}
-
-\item{...}{Passed to \code{\link{geom_hex}}.}
+\item{jitter}{Fraction of plot range to jittery by in x,y direction, as a fraction of the dynamic range.}
 }
 \value{
-A ggplot object containing the plot.
+Nothing, but a plot is produced.
 }
 \description{
 The EM algorithm used by \code{\link{inferInactiveX}} is rerun with many random starting points (1,000 by default).  This function plots a summary of these solutions, showing the log likelihood of each solution (y-axis) against the fraction of cells allocated to maternal (x-axis).
 }
 \details{
 When the genotyping is not known beforehand the designation of maternal or paternal is arbitrary and you should expect the solutions to be evenly distributed either side of 0.5 on the x-axis.
+
+Jitter is added to points to allow the high density regions of the solution space to be visualised.
 }

@@ -1,12 +1,12 @@
 Package: inactiveXX
 Title: Determine which copy of X is inactivate in single cell transcriptomic data
-Version: 0.3.3
-Date: 2022-08-12
+Version: 0.4.0
+Date: 2022-10-12
 Author: Matthew Daniel Young
 Maintainer: Matthew Daniel Young <my4@sanger.ac.uk>
 Description: Identifies X-Inactivation state for each cell.
 Imports: alleleIntegrator, Matrix, GenomeInfoDb, S4Vectors, ComplexHeatmap, circlize, methods, BiocGenerics, ggplot2, Rsamtools, Seurat (>= 4.0.0)
-Depends: R (>= 4.0.0), GenomicRanges, bettermc
+Depends: R (>= 4.0.0), GenomicRanges, bettermc, gsl, distr, miloR
 LazyData: true
 License: GPL-3 + file LICENSE
 Encoding: UTF-8

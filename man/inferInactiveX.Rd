@@ -20,7 +20,8 @@ inferInactiveX(
   tauDiffThresh = 0.05,
   tauDiffWarnOnly = FALSE,
   nParallel = 1,
-  verbose = 1
+  verbose = 1,
+  ...
 )
 }
 \arguments{
@@ -55,6 +56,8 @@ inferInactiveX(
 \item{nParallel}{How many threads?}
 
 \item{verbose}{Be verbose?  Levels are 0 (off), 1 (outer loop), 2 (beta loop), 3 (EM loop)}
+
+\item{...}{Extra parameters passed to \code{\link{mclapply}}.}
 }
 \value{
 A list with \code{states}, indicating which allele is active, \code{genotype} indicating if the reference allele is maternal for each SNP, \code{tau} the fraction of cells with maternal active, \code{allFits} which contains results for each of the \code{nStarts} random initiations, \code{cellSummary} which contains summary stats for each cell, \code{snpSummary} which contains summary stats for each SNP, and \code{dd} which contains the raw data.

@@ -26,13 +26,15 @@
 #' @param tauDiffWarnOnly If we fail the tauDiff check (see details), throw a warning instead of an error. 
 #' @param nParallel How many threads?
 #' @param verbose Be verbose?  Levels are 0 (off), 1 (outer loop), 2 (beta loop), 3 (EM loop)
+#' @param ... Extra parameters passed to \code{\link{mclapply}}.
 #' @return A list with \code{states}, indicating which allele is active, \code{genotype} indicating if the reference allele is maternal for each SNP, \code{tau} the fraction of cells with maternal active, \code{allFits} which contains results for each of the \code{nStarts} random initiations, \code{cellSummary} which contains summary stats for each cell, \code{snpSummary} which contains summary stats for each SNP, and \code{dd} which contains the raw data.
 #' @importFrom Matrix colSums
 #' @importFrom stats dbinom pbinom aggregate p.adjust
 #' @importFrom alleleIntegrator buildCountMatricies
 #' @importFrom bettermc mclapply
+#' @importFrom utils tail
 #' @export
-inferInactiveX = function(cnts,errRate=0.10,logitCut=3,pCut=0.2,tauInit=0.5,betaStart=.01,betaFac=1.3,anchorCell=NULL,nStarts=1000,tol=1e-6,maxIter=1000,tauDiffFrac=0.1,tauDiffThresh=0.05,tauDiffWarnOnly=FALSE,nParallel=1,verbose=1){
+inferInactiveX = function(cnts,errRate=0.10,logitCut=3,pCut=0.2,tauInit=0.5,betaStart=.01,betaFac=1.3,anchorCell=NULL,nStarts=1000,tol=1e-6,maxIter=1000,tauDiffFrac=0.1,tauDiffThresh=0.05,tauDiffWarnOnly=FALSE,nParallel=1,verbose=1,...){
   #Are the inputs phased?  If so, can just return the answer right now.
   if(!is.null(cnts$matCount) && !is.null(cnts$patCount)){
     #If they are, no need for EM.
@@ -94,22 +96,28 @@ inferInactiveX = function(cnts,errRate=0.10,logitCut=3,pCut=0.2,tauInit=0.5,beta
     if(verbose)
       message(sprintf("Running EM fit with %d random starts using %d threads",nStarts,nParallel))
     #Run model n times and pick best.  The best combination of params for this is a bit of guesswork, but the values here should work well in most cases.
-    out = mclapply(seq(nStarts),function(e) {
-                     tmp = deterministicAnnealing(dd,betaStart,betaFac,tauInit,anchorCell,verbose,errRate=errRate,tol=tol,maxIter=maxIter)
-                     if(verbose>1)
-                       message(sprintf('[%d of %d] Fit found with tau = %.02f and Q=%g.',e,nStarts,tmp$tau,tmp$Q))
-                     return(tmp)},
-                     mc.allow.fatal=TRUE,
-                     mc.silent=verbose<1,
-                     mc.retry.silent = verbose<1,
-                     mc.dump.frames='no',
-                     mc.shm.ipc=FALSE,
-                     mc.share.copy=FALSE,
-                     mc.share.vectors=FALSE,
-                     #mc.conditions = ifelse(verbose<1,'ignore','signal'),
-                     mc.progress= interactive() && verbose,
-                     mc.retry=10,
-                     mc.cores=nParallel)
+    #Set default parameters
+    mcParams = list(X=seq(nStarts),
+                    FUN = function(e) {tmp = deterministicAnnealing(dd,betaStart,betaFac,tauInit,anchorCell,verbose,errRate=errRate,tol=tol,maxIter=maxIter)
+                                  if(verbose>1)
+                                    message(sprintf('[%d of %d] Fit found with tau = %.02f and Q=%g.',e,nStarts,tmp$tau,tmp$Q))
+                                  return(tmp)},
+                    mc.allow.fatal=TRUE,
+                    mc.silent=verbose<1,
+                    mc.retry.silent = verbose<1,
+                    mc.dump.frames='no',
+                    mc.shm.ipc=FALSE,
+                    mc.share.copy=FALSE,
+                    mc.share.vectors=FALSE,
+                    mc.progress= interactive() && verbose,
+                    mc.retry=10,
+                    mc.cores=nParallel)
+    #Update with those supplied by the user
+    theDots = list(...)
+    for(nom in names(theDots))
+      mcParams[[nom]] = theDots[[nom]]
+    #Finally do the call
+    out = do.call(mclapply,mcParams)
     #Check if it's likely there is a more extreme solution
     taus = sapply(out,function(e) e$tau)
     Qs = sapply(out,function(e) e$Q)
@@ -122,7 +130,7 @@ inferInactiveX = function(cnts,errRate=0.10,logitCut=3,pCut=0.2,tauInit=0.5,beta
     #Get the top N and calculate the relative difference from the best value
     w = tail(seq_along(taus),n=ceiling(length(taus)*tauDiffFrac))
     if(mean(tauDiff[w]) > tauDiffThresh){
-      errFun = ifelse(tauDiffWarnOnly,warning,error)
+      errFun = ifelse(tauDiffWarnOnly,warning,stop)
       errFun(sprintf('Top %d fits highly discepent (%g).  It is likely that a more extreme X-Inactivation fraction is true, but there is insufficient data to estimate it.',length(w),mean(tauDiff[w])))
     }
     #Pick solution with best likelihood
@@ -144,7 +152,8 @@ inferInactiveX = function(cnts,errRate=0.10,logitCut=3,pCut=0.2,tauInit=0.5,beta
   tmp$badFrac = tmp$offCount/tmp$tot
   tmp = tmp[match(names(fin$states),tmp$cell),]
   #Convert to logit scale for convenience
-  tmp$states = log(fin$states/(1-fin$states))
+  tmp$stateProbs = fin$states
+  tmp$stateLogits = log(fin$states/(1-fin$states))
   tmp$highConfCall = abs(tmp$states)>logitCut
   #Is it inconsistent with the specified error rate?
   tmp$pVal = pbinom(tmp$offCount-1,tmp$tot,errRate,lower.tail=FALSE)
@@ -153,6 +162,12 @@ inferInactiveX = function(cnts,errRate=0.10,logitCut=3,pCut=0.2,tauInit=0.5,beta
   #The qVal filter is too tolerant of letting through crap
   tmp$highConfCall = tmp$highConfCall & tmp$pVal>=pCut
   rownames(tmp) = tmp$cell
+  #Create a stateXi column with calls
+  tmp$stateXi = ifelse(tmp$highConfCall,
+                       ifelse(tmp$states>0,
+                              'Maternal',
+                              'Paternal'),
+                       'Undetermined')
   fin$cellSummary = tmp
   #Now propogate the high confidence calls back to the raw data
   fin$dd$isMat = ifelse(tmp[fin$dd$cell,'highConfCall'],fin$states[fin$dd$cell]>0.5,NA)

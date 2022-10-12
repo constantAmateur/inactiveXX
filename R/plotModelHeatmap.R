@@ -40,6 +40,7 @@ plotModelHeatmap = function(fit,summariseBy=c('none','SNP','cell'),tol=0.1,minCo
   toKeep = fit$snpSummary[rownames(mat),'tot']>minCov
   mat = mat[toKeep,,drop=FALSE]
   ssRow = ssRow[toKeep]
+  dd = dd[dd$SNP %in% names(ssRow),]
   if(nrow(mat)<5){
     warning(sprintf("Fewer than 5 SNPs with coverage over %d.  Not plotting.",minCov))
     return(NULL)
