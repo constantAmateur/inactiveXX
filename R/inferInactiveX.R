@@ -12,7 +12,7 @@
 #'
 #' @param cnts Usually the output of \code{\link{getAllelicExpression}}.  A GRanges of counts with refCount/altCount (matCount/patCount if pre-phased) with one row for each cell and SNP.
 #' @param errRate Assumed all cause error rate.  10\% seems to be about the baseline, but can vary
-#' @param logitCut Cells with probabilities (on logit) scale greater than this value are marked high confidence cells.
+#' @param highConfCut Cells with probabilities greater than this value are marked high confidence cells.
 #' @param pCut Cells with p-value of excess discrepent counts under this value cannot be high confidence cells.
 #' @param tauInit Initial guess for fraction of cells expressing maternal allele.
 #' @param betaStart Initial beta to use for deterministic annealing.
@@ -34,7 +34,7 @@
 #' @importFrom bettermc mclapply
 #' @importFrom utils tail
 #' @export
-inferInactiveX = function(cnts,errRate=0.10,logitCut=3,pCut=0.2,tauInit=0.5,betaStart=.01,betaFac=1.3,anchorCell=NULL,nStarts=1000,tol=1e-6,maxIter=1000,tauDiffFrac=0.1,tauDiffThresh=0.05,tauDiffWarnOnly=FALSE,nParallel=1,verbose=1,...){
+inferInactiveX = function(cnts,errRate=0.10,highConfCut=.95,pCut=0.2,tauInit=0.5,betaStart=.01,betaFac=1.3,anchorCell=NULL,nStarts=1000,tol=1e-6,maxIter=1000,tauDiffFrac=0.1,tauDiffThresh=0.05,tauDiffWarnOnly=FALSE,nParallel=1,verbose=1,...){
   #Are the inputs phased?  If so, can just return the answer right now.
   if(!is.null(cnts$matCount) && !is.null(cnts$patCount)){
     #If they are, no need for EM.
@@ -154,7 +154,7 @@ inferInactiveX = function(cnts,errRate=0.10,logitCut=3,pCut=0.2,tauInit=0.5,beta
   #Convert to logit scale for convenience
   tmp$stateProbs = fin$states
   tmp$stateLogits = log(fin$states/(1-fin$states))
-  tmp$highConfCall = abs(tmp$states)>logitCut
+  tmp$highConfCall = abs(tmp$stateLogits)>log(highConfCut/(1-highConfCut))
   #Is it inconsistent with the specified error rate?
   tmp$pVal = pbinom(tmp$offCount-1,tmp$tot,errRate,lower.tail=FALSE)
   tmp$qVal = NA
@@ -164,7 +164,7 @@ inferInactiveX = function(cnts,errRate=0.10,logitCut=3,pCut=0.2,tauInit=0.5,beta
   rownames(tmp) = tmp$cell
   #Create a stateXi column with calls
   tmp$stateXi = ifelse(tmp$highConfCall,
-                       ifelse(tmp$statesLogits>0,
+                       ifelse(tmp$stateLogits>0,
                               'Maternal',
                               'Paternal'),
                        'Undetermined')
