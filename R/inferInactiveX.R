@@ -164,7 +164,7 @@ inferInactiveX = function(cnts,errRate=0.10,logitCut=3,pCut=0.2,tauInit=0.5,beta
   rownames(tmp) = tmp$cell
   #Create a stateXi column with calls
   tmp$stateXi = ifelse(tmp$highConfCall,
-                       ifelse(tmp$states>0,
+                       ifelse(tmp$statesLogits>0,
                               'Maternal',
                               'Paternal'),
                        'Undetermined')
