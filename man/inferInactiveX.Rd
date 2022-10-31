@@ -7,7 +7,7 @@
 inferInactiveX(
   cnts,
   errRate = 0.1,
-  logitCut = 3,
+  highConfCut = 0.95,
   pCut = 0.2,
   tauInit = 0.5,
   betaStart = 0.01,
@@ -29,7 +29,7 @@ inferInactiveX(
 
 \item{errRate}{Assumed all cause error rate.  10\% seems to be about the baseline, but can vary}
 
-\item{logitCut}{Cells with probabilities (on logit) scale greater than this value are marked high confidence cells.}
+\item{highConfCut}{Cells with probabilities greater than this value are marked high confidence cells.}
 
 \item{pCut}{Cells with p-value of excess discrepent counts under this value cannot be high confidence cells.}
 

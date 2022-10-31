@@ -67,7 +67,7 @@ inferInactiveX = function(cnts,errRate=0.10,highConfCut=.95,pCut=0.2,tauInit=0.5
     dd = merge(tMat,tPat,by=c('SNP','cell'))
     dd$tot = dd$refCount + dd$altCount
     dd = dd[dd$tot>0,]
-    fin = list(tau=tau,states=states,genotype=gtype,Q=NA,allFits=NA,dd=dd)
+    fin = list(tau=tau,states=states,genotype=gtype,Q=NA,allFits=NA,dd=dd,warnFlag=FALSE)
   }else{
     #Prepare data
     Xmat = buildCountMatricies(cnts,assays=c('refCount','altCount'))
@@ -132,10 +132,13 @@ inferInactiveX = function(cnts,errRate=0.10,highConfCut=.95,pCut=0.2,tauInit=0.5
     if(mean(tauDiff[w]) > tauDiffThresh){
       errFun = ifelse(tauDiffWarnOnly,warning,stop)
       errFun(sprintf('Top %d fits highly discepent (%g).  It is likely that a more extreme X-Inactivation fraction is true, but there is insufficient data to estimate it.',length(w),mean(tauDiff[w])))
+      tauWarnFlag=TRUE
+    }else{
+      tauWarnFlag=FALSE
     }
     #Pick solution with best likelihood
     best = out[[which.max(sapply(out,function(e) e$Q))]]
-    fin = list(tau=best$tau,states=best$states,genotype=best$lambdas,dd=dd,allFits=out)
+    fin = list(tau=best$tau,states=best$states,genotype=best$lambdas,dd=dd,allFits=out,warnFlag=tauWarnFlag)
   }
   if(verbose>0)
     message(sprintf("Best fit found with X-Inactivation fraction (tau) of %g",fin$tau))
