@@ -46,7 +46,9 @@ filterCountsX = function(cnts,cellsToUse=NULL,minObs=2,dropBiallelic=TRUE,dropSt
     }else{
       warning("regionType unavailable in cnts, results will be less reliable as we cannot filter out low accuracy regions")
     }
-  }else{
+  }
+  #Filter if not still null
+  if(!is.null(cnts$regionType)){
     cnts = cnts[cnts$regionType %in% regionsToUse]
   }
   #Drop Strata
@@ -55,12 +57,14 @@ filterCountsX = function(cnts,cellsToUse=NULL,minObs=2,dropBiallelic=TRUE,dropSt
       message('strata not found, setting assuming data has been mapped to GRCh38')
       cnts$strata = NA
       o = findOverlaps(cnts,X1k@metadata$strata)
-      cnts$strata[queryHits(o)] = names(strata)[subjectHits(o)]
+      cnts$strata[queryHits(o)] = names(X1k@metadata$strata)[subjectHits(o)]
       cnts$strata = factor(cnts$strata,levels=names(X1k@metadata$strata))
     }else{
       warning("strata unavailable in cnts, results will be less reliable as we cannot filter out regions likely to escape X-Inactivation..")
     }
-  }else{
+  }
+  #Is it still null?
+  if(!is.null(cnts$strata)){
     cnts = cnts[!cnts$strata %in% dropStrata] 
   }
   cnts = cnts[as.character(seqnames(cnts))=='X']
