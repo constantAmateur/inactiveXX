@@ -1,6 +1,6 @@
 # inactiveXX: an R package for inferring X-inactivation (Xi) status at the single cell level from single transcriptomes
 
-Infer the X-inactivation status from your single cell transcriptomic data.
+Infer the X-inactivation status from your single cell transcriptomic data, as described in [this paper](https://www.biorxiv.org/content/10.1101/2022.11.10.515645v1.full).
 
 ## Installation
 
